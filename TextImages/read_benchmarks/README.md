@@ -1,4 +1,7 @@
 
+## How it was run
+
+```{bash}
 srun --ntasks-per-node=1 --nodes 1 --mem=10GB -t1:00:00 --pty /bin/bash
 
 module purge
@@ -6,9 +9,11 @@ module load  anaconda3/5.3.1
 conda activate <env_name>
 
 python3
+```
 
+```{python}
 exec(open("read_test.py").read())
-
+```
 
 
 
