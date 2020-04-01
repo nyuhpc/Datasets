@@ -12,7 +12,7 @@ Please read more information here https://www.robots.ox.ac.uk/~vgg/data/text/
 
 File sturcture withing tar.gz:
 
-mnt/ramdisk/max/90kDICT32px/<directory_as_number>/<directory_as_number>/<file_name_with_textLabel>.jpg
+mnt/ramdisk/max/90kDICT32px/<directory_as_number>/<directory_as_number>/<file_name_with_textLabel>.jpg     
 mnt/ramdisk/max/90kDICT32px/<some_text_files_about_data>.txt
 
 ## Converting to other formats
