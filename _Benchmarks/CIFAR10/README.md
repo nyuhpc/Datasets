@@ -12,5 +12,5 @@ Install packages
 module load anaconda3/5.3.1
 conda create -p $(pwd)/penv python=3.7
 conda activate ...
-conda install -y pillow python-lmdb h5py matplotlib numpy pathlib
+conda install -y pillow lmdb python-lmdb hdf5 h5py matplotlib numpy pathlib
 

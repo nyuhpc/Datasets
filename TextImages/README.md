@@ -88,5 +88,5 @@ $ du -h hdf5/TextImages*
 module load anaconda3/5.3.1
 conda create -p $(pwd)/penv python=3.7
 conda activate ...
-conda install -y pillow h5py matplotlib numpy pathlib lmdb python-lmdb sqlite pandas
+conda install -y pillow hdf5 h5py matplotlib numpy pathlib lmdb python-lmdb sqlite pandas
 ```
