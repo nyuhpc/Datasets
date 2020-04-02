@@ -53,14 +53,14 @@ print("---reading files")
 for N_of_files in N_to_read:
     
     ## Sequentital read (next block of lines)
-    key_list = all_keys[:N_of_files]
-    key_list_hdf5 = all_keys_hdf5[:N_of_files]    
+    #key_list = all_keys[:N_of_files]
+    #key_list_hdf5 = all_keys_hdf5[:N_of_files]    
     
     ## Random access (next block of lines)
     random.seed(1)
-    #chosen_items = random.sample(range(len(all_keys)), N_of_files)
-    #key_list = [all_keys[k] for k in chosen_items]
-    #key_list_hdf5 = [all_keys_hdf5[k] for k in chosen_items]
+    chosen_items = random.sample(range(len(all_keys)), N_of_files)
+    key_list = [all_keys[k] for k in chosen_items]
+    key_list_hdf5 = [all_keys_hdf5[k] for k in chosen_items]
     
     # monitor
     print("first five keys now: ")
@@ -119,7 +119,15 @@ for N_of_files in N_to_read:
         path_to_file = os.environ['SLURM_TMPDIR'] + "/" + \
                        "mnt/ramdisk/max/90kDICT32px/" + \
                        df[df.key == key]["path"].tolist()[0]
-        PIL_image = Image.open(path_to_file)
+        
+        ## Read file
+        #PIL_image = Image.open(path_to_file)                       
+                       
+        with open(path_to_file, mode='rb') as file: # b is important -> binary
+                stored_image = file.read()                       
+        PIL_image = Image.open(io.BytesIO(stored_image))                       
+        
+        ## convert to numpy
         im_ar4[key] = np.asarray(PIL_image)
 
     toc = time.time()
@@ -143,5 +151,6 @@ lines.set_xlabel("Number of images");
 lines.set_ylabel("Time for reading (s)");
 #plt.savefig('./read_sequential.png')
 #plt.savefig('./read_rand.png')
-plt.savefig('./read_sequential_with_slurmTmpdir.png')
+#plt.savefig('./read_sequential_with_slurmTmpdir.png')
+plt.savefig('./read_random_with_slurmTmpdir.png')
 
