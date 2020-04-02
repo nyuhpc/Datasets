@@ -1,3 +1,7 @@
+## Adjust reat_test.py
+
+If needed adjust: random vs sequential, use/not SLURM_TMPDIR
+
 
 ## How it was run
 
@@ -16,9 +20,17 @@ exec(open("read_test.py").read())
 ```
 
 
+## Results
 
 
-## Result
+Sequential, including SLURM_TMPDIR
+
+Time to extract tar.gz file to $SLURM_TMPDIR 
+extracting process took (NOT included in total bellow): 1267 sec (~20 in)
+
+{'lmdb': [2.596424102783203, 0.06273317337036133, 0.19448256492614746, 0.5714616775512695], 'hdf5': [5.000521659851074, 0.15655946731567383, 0.42313432693481445, 1.1924903392791748], 'SLURM_TMPDIR': [51.129212856292725, 131.9659469127655, 440.17245292663574, 1320.5114650726318], 'N_to_read': [100, 300, 1000, 3000]}
+
+![Sequential_read_plot](read_sequential_with_slurmTmpdir.png)
 
 Sequential
 

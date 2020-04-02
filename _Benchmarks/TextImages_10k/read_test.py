@@ -166,7 +166,7 @@ df = df.round(3)
 lines = df.plot.line(style='.-', markersize = 20)
 lines.set_xlabel("Number of images");
 lines.set_ylabel("Time for reading (s)");
-plt.savefig('./read.png')
+plt.savefig('./read_sequential.png')
 #plt.savefig('./read_rand.png')
 
 

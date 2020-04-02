@@ -28,12 +28,23 @@ print("---reading sqlite for hdf5")
 with sqlite3.connect("/scratch/work/public/datasets/TextRecognitionData_VGG_Oxford/hdf5/TextImages-hdf5.sqlite") as sql_conn:
     df_hdf5 = pd.read_sql_query("select * from meta;", sql_conn)
     all_keys_hdf5 = df_hdf5['key'].tolist()
+    
+print("---extracting files to SLURM_TMPDIR")    
+######################## extract files to SLURM_TMPDIR
+tic_1 = time.time()
+os.system("tar -C $SLURM_TMPDIR -xf mjsynth.tar.gz")
+print("extracting process took (NOT included in total bellow): " + str(time.time() - tic_1))    
 
 #############################################################
 #############################################################
-timing_dict = {"lmdb": [], "hdf5": []}
 
-N_to_read = [100, 300, 1000, 3000, 10000, 30000, 100000]
+#timing_dict = {"lmdb": [], "hdf5": []}
+#N_to_read = [100, 300, 1000, 3000, 10000, 30000, 100000]
+
+#UNCOMMENT for SLURM_TMPDIR
+timing_dict = {"lmdb": [], "hdf5": [], "SLURM_TMPDIR": []}
+N_to_read = [100, 300, 1000]
+
 timing_dict["N_to_read"] = N_to_read    
 
 print("---reading files")
@@ -42,14 +53,14 @@ print("---reading files")
 for N_of_files in N_to_read:
     
     ## Sequentital read (next block of lines)
-    #key_list = all_keys[:N_of_files]
-    #key_list_hdf5 = all_keys_hdf5[:N_of_files]    
+    key_list = all_keys[:N_of_files]
+    key_list_hdf5 = all_keys_hdf5[:N_of_files]    
     
     ## Random access (next block of lines)
     random.seed(1)
-    chosen_items = random.sample(range(len(all_keys)), N_of_files)
-    key_list = [all_keys[k] for k in chosen_items]
-    key_list_hdf5 = [all_keys_hdf5[k] for k in chosen_items]
+    #chosen_items = random.sample(range(len(all_keys)), N_of_files)
+    #key_list = [all_keys[k] for k in chosen_items]
+    #key_list_hdf5 = [all_keys_hdf5[k] for k in chosen_items]
     
     # monitor
     print("first five keys now: ")
@@ -96,6 +107,24 @@ for N_of_files in N_to_read:
     timing_dict["hdf5"].append(toc-tic)
     print("elapsed time: " + str(toc - tic))
     
+    ##############################################################
+    # UNCOMMENT for SLURM_TMPDIR
+    print("read data from $SLURM_TMPDIR")
+
+    im_ar4 = {}
+    tic = time.time()
+
+    for key in key_list:
+        #print("workign with key: " + key)
+        path_to_file = os.environ['SLURM_TMPDIR'] + "/" + \
+                       "mnt/ramdisk/max/90kDICT32px/" + \
+                       df[df.key == key]["path"].tolist()[0]
+        PIL_image = Image.open(path_to_file)
+        im_ar4[key] = np.asarray(PIL_image)
+
+    toc = time.time()
+    timing_dict["SLURM_TMPDIR"].append(toc-tic)
+    print("elapsed time: " + str(toc - tic))
     
 print(timing_dict)
 
@@ -113,6 +142,6 @@ lines = df.plot.line(style='.-', markersize = 20)
 lines.set_xlabel("Number of images");
 lines.set_ylabel("Time for reading (s)");
 #plt.savefig('./read_sequential.png')
-plt.savefig('./read_rand.png')
-
+#plt.savefig('./read_rand.png')
+plt.savefig('./read_sequential_with_slurmTmpdir.png')
 
