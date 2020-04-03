@@ -46,7 +46,7 @@ with sqlite3.connect("/scratch/work/public/datasets/TextRecognitionData_VGG_Oxfo
 timing_dict = {"lmdb": [], "hdf5": []}
 
 ## Assuming we have 16 cpus avaialble on node
-#cpus_options = [1, 2, 4, 8, 16]
+## Do 16 codes two times - if any caching is happeing it will happen for first 16 cores run, and the rest of benchmark will happen on already cached data
 cpus_options = [16, 16, 8, 4, 2, 1]
 timing_dict["cpus_options"] = cpus_options
 
