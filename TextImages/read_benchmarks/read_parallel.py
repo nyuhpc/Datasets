@@ -64,11 +64,8 @@ def read_fig_lmdb(key):
     with env.begin() as lmdb_txn:
       #print(key)
       stored_image = lmdb_txn.get(key.encode())
-      #https://github.com/eriklindernoren/PyTorch-YOLOv3/issues/162
-      image = io.BytesIO(stored_image)
-      #image.LOAD_TRUNCATED_IMAGES = False
-      #return(stored_image)
-      PIL_image = Image.open(image)
+      #print(data)
+      PIL_image = Image.open(io.BytesIO(stored_image))
       return(np.asarray(PIL_image))
 
 
