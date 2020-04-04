@@ -1,4 +1,4 @@
-#srun --ntasks-per-node=16 --nodes 1 --mem=10GB -t1:00:00 --pty /bin/bash
+#srun --ntasks-per-node=16 --nodes 1 --mem=20GB -t1:00:00 --pty /bin/bash
 
 from joblib import Parallel, delayed, parallel_backend
 import numpy as np
@@ -13,7 +13,7 @@ import os
 import random
 import h5py
 import matplotlib.pyplot as plt
-
+import math
 
 
 ######################################################  Correct affinity
@@ -23,23 +23,6 @@ import os; os.sched_getaffinity(0)
 os.system("taskset -p 0xFFFFFFFF %d" % os.getpid())
 # check
 os.sched_getaffinity(0)
-
-#############################################################
-read sqlite files and get all keys
-print("---reading sqlite for lmdb")
-######################## sqlite file - for lmdb
-with sqlite3.connect("/scratch/work/public/datasets/TextRecognitionData_VGG_Oxford/lmdb/TextImages.sqlite") as sql_conn:
-   df = pd.read_sql_query("select * from meta;", sql_conn)
-   all_keys = df['key'].tolist()
-
-## let say we want to get first image
-# key = all_keys[0]
-
-print("---reading sqlite for hdf5")
-####################### hdf5 sqlite file
-with sqlite3.connect("/scratch/work/public/datasets/TextRecognitionData_VGG_Oxford/hdf5/TextImages-hdf5.sqlite") as sql_conn:
-   df_hdf5 = pd.read_sql_query("select * from meta;", sql_conn)
-   all_keys_hdf5 = df_hdf5['key'].tolist()
 
 #############################################################
 #############################################################
@@ -58,40 +41,60 @@ N_to_read = int(1e5)
 key_list = [f"{i:07}" for i in list(range(1, N_to_read+1))]
 lmdb_path = "/scratch/work/public/datasets/TextRecognitionData_VGG_Oxford/lmdb/TextImages.lmdb"
 
-def read_fig_lmdb(key):
+## we open env in every process. Opening it for every key is slow - thus pass chunk of keys 
+def read_fig_lmdb(key_sublist):
+  ret_ar = []
   #print("process id:" + str(os.getpid()))
   with lmdb.open(lmdb_path, readonly=True, lock=False) as env:
     with env.begin() as lmdb_txn:
-      #print(key)
-      stored_image = lmdb_txn.get(key.encode())
-      #print(data)
-      PIL_image = Image.open(io.BytesIO(stored_image))
-      return(np.asarray(PIL_image))
+      for key in key_sublist:
+        #print(key)
+        stored_image = lmdb_txn.get(key.encode())
+        PIL_image = Image.open(io.BytesIO(stored_image))
+        ret_ar.append(np.asarray(PIL_image))
+  return(ret_ar)
 
 
 for cpus_number in cpus_options:
+    ## split key_list to chunks
+    n = math.ceil(len(key_list)/cpus_number)
+    key_list_chunks = [key_list[i:i + n] for i in range(0, len(key_list), n)]     
     tic = time.time()
-    res = Parallel(n_jobs=cpus_number, prefer = "processes", verbose=5)(delayed(read_fig_lmdb)(key) for key in key_list)
+    res = Parallel(n_jobs=cpus_number, prefer = "processes", verbose=5)(delayed(read_fig_lmdb)(key_sublist) for key_sublist in key_list_chunks)
     toc = time.time()
     timing_dict["lmdb"].append(toc-tic)
+
+flattened = [val for sublist in res for val in sublist]
+#flattened
+
     
 ######################################################### HDF5
+hdf5_path = '/scratch/work/public/datasets/TextRecognitionData_VGG_Oxford/hdf5/TextImages.hdf5'
 
-def read_fig_hdf5(key):
-    with h5py.File('/scratch/work/public/datasets/TextRecognitionData_VGG_Oxford/hdf5/TextImages.hdf5', 'r') as f:
-        dset = f['images']
-        stored_image = dset[key]
-        #print(data)
-        PIL_image = Image.open(io.BytesIO(stored_image))
-        return(np.asarray(PIL_image))
+def read_fig_hdf5(key_sublist):
+  ret_ar = []
+  with h5py.File(hdf5_path, 'r') as f:
+    for key in key_sublist:
+      dset = f['images']
+      stored_image = dset[key]
+      #print(data)
+      PIL_image = Image.open(io.BytesIO(stored_image))
+      ret_ar.append(np.asarray(PIL_image))
+  return(ret_ar)
 
 
-key_list = list(range(int(N_to_read)))
+key_list_hdf5 = list(range(int(N_to_read)))
 for cpus_number in cpus_options:
+    ## split key_list to chunks
+    n = math.ceil(len(key_list_hdf5)/cpus_number)
+    key_list_chunks = [key_list_hdf5[i:i + n] for i in range(0, len(key_list_hdf5), n)]     
     tic = time.time()
-    res = Parallel(n_jobs=cpus_number, prefer = "processes", verbose=5)(delayed(read_fig_hdf5)(key) for key in key_list)
+    res = Parallel(n_jobs=cpus_number, prefer = "processes", verbose=5)(delayed(read_fig_hdf5)(key_sublist) for key_sublist in key_list_chunks)
     toc = time.time()
     timing_dict["hdf5"].append(toc-tic)
+
+flattened = [val for sublist in res for val in sublist]
+
 
 #######################################################
 import sys
