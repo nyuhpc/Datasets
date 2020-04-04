@@ -64,8 +64,8 @@ for cpus_number in cpus_options:
     toc = time.time()
     timing_dict["lmdb"].append(toc-tic)
 
-flattened = [val for sublist in res for val in sublist]
-#flattened
+## flatten res 
+res = [val for sublist in res for val in sublist]
 
     
 ######################################################### HDF5
@@ -93,7 +93,8 @@ for cpus_number in cpus_options:
     toc = time.time()
     timing_dict["hdf5"].append(toc-tic)
 
-flattened = [val for sublist in res for val in sublist]
+## flatten res
+res = [val for sublist in res for val in sublist]
 
 
 #######################################################
