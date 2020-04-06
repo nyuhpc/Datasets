@@ -41,7 +41,7 @@ N_to_read = int(1e5)
 key_list = [f"{i:07}" for i in list(range(1, N_to_read+1))]
 lmdb_path = "/scratch/work/public/datasets/TextRecognitionData_VGG_Oxford/lmdb/TextImages.lmdb"
 
-## we open env in every process. Opening it for every key is slow - thus pass chunk of keys 
+## we open env in every process. Opening it for every key is slow (made reading twice as slow) - thus pass chunk of keys 
 def read_fig_lmdb(key_sublist):
   ret_ar = []
   #print("process id:" + str(os.getpid()))

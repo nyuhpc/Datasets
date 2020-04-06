@@ -64,3 +64,14 @@ And in the log scale
 
 ![Random_read_plot](read_parallel_log.png)
 
+
+## Readign the whole data set
+
+### hdf5
+
+File size ~ 15 GB
+
+* If use IMAGE open and then convert to array, the whole data set would require ~ 150 GB   
+* If you read only binary representation of image to array, only about 15 GB of RAM is needed to store it. Read time is about 50 min in this case.Tradeoff: yes, you use less RAM, but need to convert from binary jpg representation to NumPy array when you want to use it
+
+
