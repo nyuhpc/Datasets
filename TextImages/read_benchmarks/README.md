@@ -31,9 +31,19 @@ Notes:
 Time to extract tar.gz file to $SLURM_TMPDIR 
 500 - 1300 sec (~ 8-20 min)
 
+Two trials below:
+
+extracting process took (NOT included in total bellow): 529.3871302604675
+copy lmdb file time (NOT included in total bellow): 458.6818673610687
+copy hdf5 file time (NOT included in total bellow): 356.8990695476532
+
+
 extracting process took (NOT included in total bellow): 500.2204577922821
 copy lmdb file time (NOT included in total bellow): 63.31408166885376
 copy hdf5 file time (NOT included in total bellow): 176.15278601646423
+
+
+
 
 ### Sequential, no conversion
 
@@ -82,25 +92,16 @@ copy hdf5 file time (NOT included in total bellow): 176.15278601646423
 
 
 
-## Sequential access, parallel - redo, add local hdf5 and lmdb
+## Sequential access, parallel - no conversion to NumPy
 
 
-{'lmdb': [6.325052738189697, 5.198148488998413, 7.6550891399383545, 11.946351766586304, 17.232758045196533, 18.931683778762817], 'hdf5': [9.953233003616333, 7.430699825286865, 12.333068609237671, 19.512855291366577, 34.31105184555054, 54.162779331207275], 'cpus_options': [16, 16, 8, 4, 2, 1]}
-
-![Random_read_plot](read_parallel.png)
-
-And in the log scale
-
-![Random_read_plot](read_parallel_log.png)
-
-
-## Reading the whole data set
-
-### hdf5
-
-File size ~ 15 GB
-
-* If use IMAGE open and then convert to array, the whole data set would require ~ 150 GB   
-* If you read only binary representation of image to array, only about 15 GB of RAM is needed to store it. Read time is about 50 min in this case.Tradeoff: yes, you use less RAM, but need to convert from binary jpg representation to NumPy array when you want to use it
+{'lmdb': [2.8527822494506836, 0.6173934936523438, 1.8535752296447754, 1.3358535766601562, 1.43070650100708, 0.2882215976715088], 'hdf5': [2.9685206413269043, 0.7510066032409668, 1.9176933765411377, 1.8100028038024902, 2.3073599338531494, 2.220421314239502], 'lmdb_local': [2.87046217918396, 0.6000940799713135, 1.8250153064727783, 1.2350819110870361, 1.3441288471221924, 0.24516868591308594], 'hdf5_local': [3.3385579586029053, 0.6832499504089355, 2.031604528427124, 1.7322924137115479, 2.3492658138275146, 1.8298425674438477], 'SLURM_TMPDIR': [107.95755910873413, 0.7163519859313965, 1.9632365703582764, 1.5819671154022217, 1.8851642608642578, 1.2052943706512451], 'subset_of_paths': [0.15331125259399414, 0.1526944637298584, 0.14911627769470215, 0.15462851524353027, 0.1539628505706787, 0.15474748611450195], 'cpus_options': [16, 16, 8, 4, 2, 1]}
+     lmdb   hdf5  lmdb_local  hdf5_local  SLURM_TMPDIR
+16  2.853  2.969       2.870       3.339       107.958
+16  0.617  0.751       0.600       0.683         0.716
+8   1.854  1.918       1.825       2.032         1.963
+4   1.336  1.810       1.235       1.732         1.582
+2   1.431  2.307       1.344       2.349         1.885
+1   0.288  2.220       0.245       1.830         1.205
 
 

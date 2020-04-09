@@ -147,7 +147,7 @@ for N_of_files in N_to_read:
     
 
     ##################
-    ## LMDB, slurm ##
+    ## LMDB, local ##
     ##################
     print("read data from lmdb-local")
     
@@ -276,7 +276,7 @@ for N_of_files in N_to_read:
     ###############################
     ## update staring read index ##
     ###############################
-    # start_index = start_index + N_of_files
+    start_index = start_index + N_of_files
     
 print(timing_dict)
 
