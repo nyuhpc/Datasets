@@ -21,6 +21,7 @@ while IFS= read -r line; do echo $line; cp $line $(echo "$line" | sed "s/^data_p
 #check
 find data_${N_files}/* -type f | wc -l
 
+tar -czvf data_${N_files}.tar.gz data_${N_files}
 
 
 

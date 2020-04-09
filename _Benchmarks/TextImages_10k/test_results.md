@@ -11,6 +11,8 @@ we have following benchmarks to do:
 
 ## Prepare
 
+use commands inside 'create_subset_of_files.sh' to prepare subset of data
+
 ```
 srun --ntasks-per-node=1 --nodes 1 --mem=20GB -t2:00:00 --pty /bin/bash
 module load  anaconda3/5.3.1

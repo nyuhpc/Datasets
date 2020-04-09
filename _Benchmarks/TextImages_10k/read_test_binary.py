@@ -17,8 +17,8 @@ import matplotlib.pyplot as plt
 #sequential_read = True
 sequential_read = False
 
-#convert_to_numpy = False
-convert_to_numpy = True
+convert_to_numpy = False
+#convert_to_numpy = True
 
 ##############################################################
 
@@ -44,17 +44,19 @@ N_to_read = [100, 500, 1000, 3000, 5000, 8000, len(all_keys)]
 timing_dict["N_to_read"] = N_to_read    
 
 ###############
-## Copy data ##
+## Extract data ##
 ###############
 print("copy files")
 tic_1 = time.time()
-os.system("cp -r data_10000/* $SLURM_TMPDIR/")
+#os.system("cp -r data_10000/* $SLURM_TMPDIR/")
+os.system("tar -C $SLURM_TMPDIR/ -xf data_10000.tar.gz")
 slurm_tmpdir_copy_time = time.time() - tic_1
 print("copy to SLURM_TMPDIR process took (included in total bellow): " + str(slurm_tmpdir_copy_time))
 
 ## copy files
 tic_1 = time.time()
-os.system("cp -r data_10000/* $SLURM_RAM_TMPDIR/")
+#os.system("cp -r data_10000/* $SLURM_RAM_TMPDIR/")
+os.system("tar -C $SLURM_RAM_TMPDIR/ -xf data_10000.tar.gz")
 slurm_tmpRAMdir_copy_time = time.time() - tic_1
 print("copy to SLURM_RAM_TMPDIR process took (included in total bellow): " + str(slurm_tmpRAMdir_copy_time))
 
