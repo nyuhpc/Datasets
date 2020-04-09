@@ -33,9 +33,9 @@ os.sched_getaffinity(0)
 
 print("---reading sqlite for hdf5")
 ######################## hdf5 sqlite file
-# with sqlite3.connect("/scratch/work/public/datasets/TextRecognitionData_VGG_Oxford/hdf5/TextImages-hdf5.sqlite") as sql_conn:
-#     df_hdf5 = pd.read_sql_query("select * from meta;", sql_conn)
-#     all_keys_hdf5 = df_hdf5['key'].tolist()
+with sqlite3.connect("/scratch/work/public/datasets/TextRecognitionData_VGG_Oxford/hdf5/TextImages-hdf5.sqlite") as sql_conn:
+    df_hdf5 = pd.read_sql_query("select * from meta;", sql_conn)
+    all_keys_hdf5 = df_hdf5['key'].tolist()
 
 
 ################################### 
@@ -45,17 +45,17 @@ print("copy data to SLURM_TMPDIR")
 
 print("---extracting files to SLURM_TMPDIR")
 ######################## extract files to SLURM_TMPDIR
-# tic_1 = time.time()
-# os.system("tar -C $SLURM_TMPDIR -xf mjsynth.tar.gz")
-# print("extracting process took (NOT included in total bellow): " + str(time.time() - tic_1))
-# 
-# tic_1 = time.time()
-# os.system("cp -r /scratch/work/public/datasets/TextRecognitionData_VGG_Oxford/lmdb/TextImages.lmdb $SLURM_TMPDIR/")
-# print("copy lmdb file time (NOT included in total bellow): " + str(time.time() - tic_1))
-# 
-# tic_1 = time.time()
-# os.system("cp -r /scratch/work/public/datasets/TextRecognitionData_VGG_Oxford/hdf5/TextImages.hdf5 $SLURM_TMPDIR/")
-# print("copy hdf5 file time (NOT included in total bellow): " + str(time.time() - tic_1))
+tic_1 = time.time()
+os.system("tar -C $SLURM_TMPDIR -xf mjsynth.tar.gz")
+print("extracting process took (NOT included in total bellow): " + str(time.time() - tic_1))
+
+tic_1 = time.time()
+os.system("cp -r /scratch/work/public/datasets/TextRecognitionData_VGG_Oxford/lmdb/TextImages.lmdb $SLURM_TMPDIR/")
+print("copy lmdb file time (NOT included in total bellow): " + str(time.time() - tic_1))
+
+tic_1 = time.time()
+os.system("cp -r /scratch/work/public/datasets/TextRecognitionData_VGG_Oxford/hdf5/TextImages.hdf5 $SLURM_TMPDIR/")
+print("copy hdf5 file time (NOT included in total bellow): " + str(time.time() - tic_1))
 
 
 #############################################################
