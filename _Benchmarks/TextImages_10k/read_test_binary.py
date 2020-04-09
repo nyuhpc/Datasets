@@ -14,8 +14,8 @@ import h5py
 import matplotlib.pyplot as plt
 ##############################################################
 
-#sequential_read = True
-sequential_read = False
+sequential_read = True
+#sequential_read = False
 
 convert_to_numpy = False
 #convert_to_numpy = True
@@ -36,7 +36,9 @@ with sqlite3.connect("hdf5-jpg-10000.sqlite") as sql_conn:
 
 #############################################################
 #############################################################
-timing_dict = {"lmdb": [], "hdf5": [], "scratch": [], "SLURM_TMPDIR": [], "SLURM_RAM_TMPDIR": [], "convert": [], "subset_of_paths": []}
+timing_dict = {"lmdb": [], "hdf5": [], "scratch": [], "SLURM_TMPDIR": [], \
+               "SLURM_RAM_TMPDIR": [], "convert": [], "subset_of_paths": [],\
+               "lmdb_local": [], "hdf5_local": []}
 #timing_dict = {"lmdb": [], "hdf5": [], "scratch": [], "convert": [], "subset_of_paths": []}
 
 #N_to_read = [100]
@@ -49,16 +51,19 @@ timing_dict["N_to_read"] = N_to_read
 print("copy files")
 tic_1 = time.time()
 #os.system("cp -r data_10000/* $SLURM_TMPDIR/")
-os.system("tar -C $SLURM_TMPDIR/ -xf data_10000.tar.gz")
+os.system("tar -C $SLURM_TMPDIR -xf data_10000.tar.gz")
 slurm_tmpdir_copy_time = time.time() - tic_1
 print("copy to SLURM_TMPDIR process took (included in total bellow): " + str(slurm_tmpdir_copy_time))
 
-## copy files
 tic_1 = time.time()
-#os.system("cp -r data_10000/* $SLURM_RAM_TMPDIR/")
-os.system("tar -C $SLURM_RAM_TMPDIR/ -xf data_10000.tar.gz")
-slurm_tmpRAMdir_copy_time = time.time() - tic_1
-print("copy to SLURM_RAM_TMPDIR process took (included in total bellow): " + str(slurm_tmpRAMdir_copy_time))
+os.system("cp -r lmdb-jpg-10000.lmdb $SLURM_TMPDIR/")
+print("copy lmdb file time (NOT included in total bellow): " + str(time.time() - tic_1))
+
+tic_1 = time.time()
+os.system("cp -r hdf5-jpg-10000.hdf5 $SLURM_TMPDIR/")
+print("copy hdf5 file time (NOT included in total bellow): " + str(time.time() - tic_1))
+
+
 
 ##############
 ## Do read  ##
@@ -83,7 +88,9 @@ for N_of_files in N_to_read:
         random.seed(N_of_files)
         chosen_items = random.sample(range(start_index, max_index), N_of_files)
         key_list = [all_keys[k] for k in chosen_items]
+        key_list.sort()
         key_list_hdf5 = [all_keys_hdf5[k] for k in chosen_items]
+        key_list_hdf5.sort()
         
     # monitor
     print("first five keys now: ")
@@ -124,6 +131,37 @@ for N_of_files in N_to_read:
     print("elapsed time: " + str(toc - tic))
     timing_dict["convert"].append(convert_time)
     
+    
+    ##################
+    ## LMDB, slurm ##
+    ##################
+    print("read data from lmdb-local")
+    
+    env = lmdb.open(os.getenv("SLURM_TMPDIR") + "/lmdb-jpg-10000.lmdb", 
+                    readonly=True, lock=False)
+    
+    im_ar_l = {}
+    
+    tic = time.time()
+    convert_time = 0
+    
+    with env.begin() as lmdb_txn:
+        print("read from lmdb")
+        print(lmdb_txn.stat())
+        for key in key_list:
+            stored_image = lmdb_txn.get(key.encode())
+            if convert_to_numpy:
+                PIL_image = Image.open(io.BytesIO(stored_image))
+                im_ar_l[key] =  np.asarray(PIL_image)
+            else:
+                im_ar_l[key] =  stored_image
+    toc = time.time()
+    env.close()
+
+    timing_dict["lmdb_local"].append(toc-tic)
+    print("elapsed time: " + str(toc - tic))
+    
+    
     ##################
     ## HDF5         ##
     ##################
@@ -134,18 +172,37 @@ for N_of_files in N_to_read:
     
     with h5py.File('hdf5-jpg-10000.hdf5', 'r') as f:
         dset = f['images']
-        for key in key_list_hdf5:
-            #print("workign with key: " + key)
-            stored_image = dset[key]
-            if convert_to_numpy:
-                PIL_image = Image.open(io.BytesIO(stored_image))
-                im_ar2[key] =  np.asarray(PIL_image)
-            else:
-                im_ar2[key] =  stored_image
+        if convert_to_numpy:
+            chosen_stored_images = dset[key_list_hdf5]
+            im_ar2 = [np.asarray(Image.open(io.BytesIO(stored_image))) for stored_image in chosen_stored_images]
+        else:
+            chosen_stored_images = dset[key_list_hdf5]
     
     toc = time.time()
     timing_dict["hdf5"].append(toc-tic)
     print("elapsed time: " + str(toc - tic))
+
+    ##################
+    ## HDF5-local   ##
+    ##################
+    print('read data from hdf5-local')
+    
+    im_ar2_l = {}
+    tic = time.time()
+    
+    with h5py.File(os.getenv("SLURM_TMPDIR") + "/hdf5-jpg-10000.hdf5", 'r') as f:
+        dset = f['images']
+        if convert_to_numpy:
+            chosen_stored_images = dset[key_list_hdf5]
+            im_ar2_l = [np.asarray(Image.open(io.BytesIO(stored_image))) for stored_image in chosen_stored_images]
+        else:
+            im_ar2_l = dset[key_list_hdf5]
+            
+    toc = time.time()
+    timing_dict["hdf5_local"].append(toc-tic)
+    print("elapsed time: " + str(toc - tic))
+
+
     
     ###################################################################
     ## Prepare to read from disk: Subset paths to read files from    ##
@@ -203,13 +260,13 @@ for N_of_files in N_to_read:
     ##################
     print("read data from SLURM_TMPDIR")
     ## add full paths
-    paths_to_read_full = [os.environ['SLURM_TMPDIR']  + "/mnt/ramdisk/max/90kDICT32px/" + s for s in paths_to_read]
+    paths_to_read_full = [os.environ['SLURM_TMPDIR']  + "/data_10000/mnt/ramdisk/max/90kDICT32px/" + s for s in paths_to_read]
     im_ar4 = {}
     tic = time.time()
 
     for ind in range(len(key_list_hdf5)):
-        #print("workign with key: " + key)
         path_to_file = paths_to_read_full[ind]
+        #print("workign with key: " + str(key) + " and path " + path_to_file)
         key = key_list_hdf5[ind]
         ## Read file directly to PIL_image
         ## PIL_image = Image.open(path_to_file)
@@ -224,32 +281,34 @@ for N_of_files in N_to_read:
     timing_dict["SLURM_TMPDIR"].append(toc-tic)
     print("elapsed time: " + str(toc - tic))
 
-    ######################
-    ## SLURM_RAM_TMPDIR ##
-    ######################
-    print('read data from SLURM_RAM_TMPDIR')
-    ## add full paths
-    paths_to_read_full = [os.environ['SLURM_RAM_TMPDIR'] + "/" + "mnt/ramdisk/max/90kDICT32px/" + s for s in paths_to_read]
-    im_ar5 = {}
-    tic = time.time()
 
-    #for key in key_list_hdf5:
-    for ind in range(len(key_list_hdf5)):
-        #print("workign with key: " + key)
-        path_to_file = paths_to_read_full[ind]
-        key = key_list_hdf5[ind]
-        ## Read file directly to PIL_image
-        ## PIL_image = Image.open(path_to_file)
-        with open(path_to_file, mode='rb') as file:
-            stored_image = file.read()
-        if convert_to_numpy:
-            PIL_image = Image.open(io.BytesIO(stored_image))
-            im_ar5[key] =  np.asarray(PIL_image)
-        else:
-            im_ar5[key] =  stored_image
-    toc = time.time()
-    timing_dict["SLURM_RAM_TMPDIR"].append(toc-tic)
-    print("elapsed time: " + str(toc - tic))
+    timing_dict["SLURM_RAM_TMPDIR"].append(0)
+    # ######################
+    # ## SLURM_RAM_TMPDIR ##
+    # ######################
+    # print('read data from SLURM_RAM_TMPDIR')
+    # ## add full paths
+    # paths_to_read_full = [os.environ['SLURM_RAM_TMPDIR'] + "/" + "mnt/ramdisk/max/90kDICT32px/" + s for s in paths_to_read]
+    # im_ar5 = {}
+    # tic = time.time()
+    # 
+    # #for key in key_list_hdf5:
+    # for ind in range(len(key_list_hdf5)):
+    #     #print("workign with key: " + key)
+    #     path_to_file = paths_to_read_full[ind]
+    #     key = key_list_hdf5[ind]
+    #     ## Read file directly to PIL_image
+    #     ## PIL_image = Image.open(path_to_file)
+    #     with open(path_to_file, mode='rb') as file:
+    #         stored_image = file.read()
+    #     if convert_to_numpy:
+    #         PIL_image = Image.open(io.BytesIO(stored_image))
+    #         im_ar5[key] =  np.asarray(PIL_image)
+    #     else:
+    #         im_ar5[key] =  stored_image
+    # toc = time.time()
+    # timing_dict["SLURM_RAM_TMPDIR"].append(toc-tic)
+    # print("elapsed time: " + str(toc - tic))
 
     ###############################
     ## update staring read index ##
