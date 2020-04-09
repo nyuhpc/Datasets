@@ -14,8 +14,8 @@ import h5py
 import matplotlib.pyplot as plt
 ##############################################################
 
-sequential_read = True
-#sequential_read = False
+#sequential_read = True
+sequential_read = False
 
 convert_to_numpy = False
 #convert_to_numpy = True
@@ -342,6 +342,7 @@ df = df.drop(100)
 df = df.round(3)
 
 print(df)
+#print(df.apply(lambda x: x.astype("str").str.pad(10, side ='left')))
 
 lines = df.plot.line(style='.-', markersize = 20)
 lines.set_xlabel("Number of images")

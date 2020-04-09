@@ -23,12 +23,25 @@ This process is done using slurm session (it is expensive computation, and in SL
 
 *Images:* 
 
-both lmdb and hfd5 contain images in binary jpg format. These objects can be read from any language: python, R, MATLAB, etc.
+* lmdb
 
-lmdb keys have 7 digits, for example image number 12 has key "0000012"
+contains images in binary jpg format. These objects can be read from any language: python, R, MATLAB, etc.
 
-hdf5 dataset name is "images"
-hdf5 elements start from 0. So 12th image would be accessed usign index 11
+lmdb keys have 7 digits starting from "0000001", for example image number 12 has key "0000012"
+
+* hdf5
+
+contains images in binary jpg format. These objects can be read from any language: python, R, MATLAB, etc.
+
+hdf5 dataset name is "images"    
+hdf5 elements index start from 0. 
+
+* lmdb_numpy
+
+contains image converted to NumPy and saved as pickle  
+
+Not all images were converted succesfully. 32 Files had errors.Errors are stored in file errors_lmdb.txt
+
 
 *Metadata:*
 
@@ -41,6 +54,11 @@ lmdb SQLite file schema:
 
 hdf5 SQLite file schema: 
 * key - file number (starts from 0)
+* label - word extracted from filename
+* path - path within original tar.gz archive
+
+lmdb_numpy SQLite file schema: 
+* key - lmdb key
 * label - word extracted from filename
 * path - path within original tar.gz archive
 
@@ -66,6 +84,7 @@ Look at file write_jpg_hdf5_all.py
 
 * lmdb: 1297 sec (~ 20 min)
 * hdf5: 3523 sec (~ 1 hour)
+* lmdb_numpy: 6055 sec (~ 100 min)
 
 ### how big are the files
 
@@ -77,12 +96,28 @@ $ du -h hdf5/TextImages*
 15G     hdf5/TextImages.hdf5
 407M    hdf5/TextImages-hdf5.sqlite
 
+$ du -sh lmdb_numpy/*
+8.0K    lmdb_numpy/errors_lmdb.txt
+109G    lmdb_numpy/TextImages_numpy.lmdb
+624M    lmdb_numpy/TextImages_numpy.sqlite
+
 ### lmdb tree info
 
-{'psize': 4096, 'depth': 4, 'branch_pages': 21444, 'leaf_pages': 4824460, 'overflow_pages': 1874847, 'entries': 8918999}
+env = lmdb.open("/scratch/work/public/datasets/TextRecognitionData_VGG_Oxford/lmdb/TextImages.lmdb", readonly=True, lock=False)
+
+env.stat()
+
+{'psize': 4096, 'depth': 4, 'branch_pages': 21444, 'leaf_pages': 4824594, 'overflow_pages': 1874918, 'entries': 8919273}
+
+### lmdb_numpy tree info
+
+env = lmdb.open("/scratch/work/public/datasets/TextRecognitionData_VGG_Oxford/lmdb_numpy/TextImages_numpy.lmdb", readonly=True, lock=False)
+
+env.stat()
+
+{'psize': 4096, 'depth': 4, 'branch_pages': 262, 'leaf_pages': 58516, 'overflow_pages': 28402217, 'entries': 8919241}
 
 
-## Conda environment setup
 
 ```{bash}
 module load anaconda3/5.3.1
